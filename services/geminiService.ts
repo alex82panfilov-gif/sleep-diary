@@ -4,7 +4,7 @@ import type { LogEntry } from '../types';
 // FIX: Per @google/genai coding guidelines, the API key must be read directly from 
 // process.env.API_KEY and its existence is assumed. Redundant checks and intermediate
 // constants for the API key have been removed.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenerativeAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 function formatLogsForPrompt(logs: LogEntry[]): string {
     if (logs.length === 0) {
