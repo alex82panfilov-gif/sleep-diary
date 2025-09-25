@@ -111,11 +111,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ logs }) => {
     
     const downloadXLSX = () => {
         if (filteredLogs.length === 0) return;
-        const xlsxLib = (window as any).XLSX;
-        if (!xlsxLib || !xlsxLib.utils) {
-            alert("Ошибка при экспорте файла. Не удалось загрузить библиотеку отчетов.");
-            return;
-        }
+
         const dataForSheet = filteredLogs.map(log => ({
             'Дата': log.date,
             'Длительность сна': calculateSleepDurationForLog(log.bedtime, log.wakeupTime),
@@ -123,14 +119,17 @@ export const ReportView: React.FC<ReportViewProps> = ({ logs }) => {
             'Дозировка (суммарно за день)': calculateTotalDosage(log),
             'Приступ (был/не был)': log.hadSeizure ? 'Был' : 'Не был',
         }));
-        const worksheet = xlsxLib.utils.json_to_sheet(dataForSheet);
-        const workbook = xlsxLib.utils.book_new();
-        xlsxLib.utils.book_append_sheet(workbook, worksheet, 'Отчет');
+        
+        const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Отчет');
+        
         const cols = Object.keys(dataForSheet[0]);
         worksheet['!cols'] = cols.map(col => ({
              wch: Math.max(col.length, ...dataForSheet.map(row => String((row as any)[col] ?? '').length))
         }));
-        xlsxLib.writeFile(workbook, `sleep_report_${startDate}_to_${endDate}.xlsx`);
+        
+        XLSX.writeFile(workbook, `sleep_report_${startDate}_to_${endDate}.xlsx`);
     };
 
     return (
