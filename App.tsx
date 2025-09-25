@@ -7,8 +7,7 @@ import { SettingsView } from './components/SettingsView';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { LogEntry, AppSettings } from './types';
 import { DEFAULT_SETTINGS } from './constants';
-import { BellIcon, CalendarIcon, ChartBarIcon, CogIcon, PencilSquareIcon } from './components/Icons';
-import { AlarmModal } from './components/AlarmModal';
+import { CalendarIcon, ChartBarIcon, CogIcon, PencilSquareIcon } from './components/Icons';
 
 type View = 'log' | 'calendar' | 'report' | 'settings';
 
@@ -16,71 +15,11 @@ const App: React.FC = () => {
   const [logs, setLogs] = useLocalStorage<LogEntry[]>('sleepLogs', []);
   const [settings, setSettings] = useLocalStorage<AppSettings>('appSettings', DEFAULT_SETTINGS);
   const [currentView, setCurrentView] = useState<View>('log');
-  const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
   const [isClient, setIsClient] = useState(false);
-
-  // New state for alarm
-  const [isAlarmActive, setIsAlarmActive] = useState(false);
-  const [alarmMessage, setAlarmMessage] = useState('');
-  const [activeReminderTime, setActiveReminderTime] = useState('');
-  const [snoozeUntil, setSnoozeUntil] = useState<number | null>(null);
-  const [dismissedReminders, setDismissedReminders] = useLocalStorage<Record<string, string>>('dismissedReminders', {});
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  useEffect(() => {
-    if (!isClient || !settings.notificationsEnabled || Notification.permission !== 'granted') {
-      return;
-    }
-
-    const checkReminders = () => {
-      const now = new Date();
-      if (snoozeUntil && now.getTime() < snoozeUntil) {
-        return; // Still snoozing
-      }
-
-      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      const todayISO = now.toISOString().split('T')[0];
-
-      const triggerAlarm = (message: string, reminderTime: string) => {
-        if (dismissedReminders[reminderTime] === todayISO || isAlarmActive) return;
-
-        setAlarmMessage(message);
-        setActiveReminderTime(reminderTime);
-        setIsAlarmActive(true);
-        setSnoozeUntil(null); // Clear snooze when alarm triggers
-        new Notification('Напоминание о лекарствах', { body: message, tag: `med-reminder-${reminderTime}` });
-      };
-
-      if (currentTime === settings.morningReminder) {
-        triggerAlarm('Пора принять утренние лекарства!', settings.morningReminder);
-      }
-      if (currentTime === settings.eveningReminder) {
-        triggerAlarm('Пора принять вечерние лекарства!', settings.eveningReminder);
-      }
-    };
-
-    const intervalId = setInterval(checkReminders, 30000); // Check every 30 seconds
-    return () => clearInterval(intervalId);
-    
-  }, [settings, isClient, snoozeUntil, dismissedReminders, isAlarmActive, setDismissedReminders]);
-
-
-  const requestNotificationPermission = useCallback(async () => {
-    if (!('Notification' in window)) {
-      alert('Этот браузер не поддерживает уведомления.');
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
-    if (permission === 'granted') {
-      setSettings(s => ({ ...s, notificationsEnabled: true }));
-    } else {
-      setSettings(s => ({ ...s, notificationsEnabled: false }));
-    }
-  }, [setSettings]);
 
   const addOrUpdateLog = (newLog: LogEntry) => {
     setLogs(prevLogs => {
@@ -94,21 +33,6 @@ const App: React.FC = () => {
     });
   };
 
-  const handleSnooze = () => {
-    setIsAlarmActive(false);
-    setSnoozeUntil(Date.now() + 5 * 60 * 1000); // 5 minutes from now
-  };
-
-  const handleDismiss = () => {
-    setIsAlarmActive(false);
-    setSnoozeUntil(null);
-    const todayISO = new Date().toISOString().split('T')[0];
-    setDismissedReminders(prev => ({
-      ...prev,
-      [activeReminderTime]: todayISO,
-    }));
-  };
-  
   const renderView = () => {
     switch (currentView) {
       case 'log':
@@ -122,8 +46,6 @@ const App: React.FC = () => {
           <SettingsView 
             settings={settings} 
             onSettingsChange={setSettings} 
-            onRequestNotificationPermission={requestNotificationPermission}
-            notificationPermission={notificationPermission}
             logs={logs}
           />
         );
@@ -141,14 +63,6 @@ const App: React.FC = () => {
       <header className="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl md:text-2xl font-bold text-sky-600 dark:text-sky-400">Дневник Сна</h1>
-          {settings.notificationsEnabled && notificationPermission === 'granted' ? (
-            <BellIcon className="w-6 h-6 text-green-500"/>
-          ) : (
-             <button onClick={requestNotificationPermission} className="flex items-center gap-1 text-sm text-slate-500 hover:text-sky-500">
-               <BellIcon className="w-5 h-5 text-red-500"/>
-               Вкл. напом.
-             </button>
-          )}
         </div>
       </header>
 
@@ -164,13 +78,6 @@ const App: React.FC = () => {
           <NavButton icon={<CogIcon />} label="Настройки" onClick={() => setCurrentView('settings')} isActive={currentView === 'settings'} />
         </nav>
       </footer>
-      
-      <AlarmModal 
-        isOpen={isAlarmActive}
-        message={alarmMessage}
-        onSnooze={handleSnooze}
-        onDismiss={handleDismiss}
-      />
     </div>
   );
 };

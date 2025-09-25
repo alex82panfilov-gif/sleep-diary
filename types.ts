@@ -37,9 +37,6 @@ export interface MedicationTemplate {
 
 export interface AppSettings {
     targetWakeupTime: string; // 'HH:mm'
-    morningReminder: string; // 'HH:mm'
-    eveningReminder: string; // 'HH:mm'
-    notificationsEnabled: boolean;
     medications: MedicationTemplate[];
     noteTags: string[];
     triggerTags: string[];

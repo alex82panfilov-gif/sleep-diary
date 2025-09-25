@@ -5,12 +5,10 @@ import { ArrowDownTrayIcon, ArrowUpTrayIcon, TrashIcon } from './Icons';
 interface SettingsViewProps {
   settings: AppSettings;
   onSettingsChange: React.Dispatch<React.SetStateAction<AppSettings>>;
-  onRequestNotificationPermission: () => void;
-  notificationPermission: string;
   logs: LogEntry[];
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange, onRequestNotificationPermission, notificationPermission, logs }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange, logs }) => {
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
   const [newNoteTag, setNewNoteTag] = useState('');
@@ -249,31 +247,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettings
               <div className="flex items-center"><input type="checkbox" id="yellow_nightWakings" name="nightWakings" checked={settings.yellowDayFactors.nightWakings} onChange={handleFactorChange('yellowDayFactors')} className="h-4 w-4 rounded" /><label htmlFor="yellow_nightWakings" className="ml-3">Ночные пробуждения</label></div>
             </div>
         </div>
-
-        {/* Reminders */}
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-            <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">Напоминания</h3>
-             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Получайте уведомления в браузере, чтобы не забыть принять лекарства.</p>
-            {notificationPermission === 'default' && (
-                 <button onClick={onRequestNotificationPermission} className="w-full px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors">Включить напоминания</button>
-            )}
-            {notificationPermission === 'denied' && (
-                <p className="text-red-500 text-center p-2 bg-red-50 dark:bg-red-900/50 rounded-md">Вы заблокировали уведомления. Чтобы включить их, измените настройки вашего браузера для этого сайта.</p>
-            )}
-            {notificationPermission === 'granted' && (
-                <div className="space-y-4">
-                     <div>
-                        <label htmlFor="morningReminder" className="block font-semibold mb-1">Утреннее напоминание</label>
-                        <input type="time" id="morningReminder" name="morningReminder" value={settings.morningReminder} onChange={handleChange} className="w-full p-2 border rounded-md bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600" />
-                    </div>
-                    <div>
-                        <label htmlFor="eveningReminder" className="block font-semibold mb-1">Вечернее напоминание</label>
-                        <input type="time" id="eveningReminder" name="eveningReminder" value={settings.eveningReminder} onChange={handleChange} className="w-full p-2 border rounded-md bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600" />
-                    </div>
-                </div>
-            )}
-        </div>
-
       </div>
     </div>
   );
