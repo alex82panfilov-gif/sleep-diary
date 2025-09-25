@@ -51,7 +51,6 @@ const App: React.FC = () => {
         setActiveReminderTime(reminderTime);
         setIsAlarmActive(true);
         setSnoozeUntil(null); // Clear snooze when alarm triggers
-        // FIX: The 'renotify' property is deprecated and causes a TypeScript error. Modern browsers handle re-notification with the same tag by default.
         new Notification('Напоминание о лекарствах', { body: message, tag: `med-reminder-${reminderTime}` });
       };
 
@@ -109,13 +108,13 @@ const App: React.FC = () => {
       [activeReminderTime]: todayISO,
     }));
   };
-
+  
   const renderView = () => {
     switch (currentView) {
       case 'log':
-        return <DailyLogForm addOrUpdateLog={addOrUpdateLog} logs={logs} targetWakeupTime={settings.targetWakeupTime} />;
+        return <DailyLogForm addOrUpdateLog={addOrUpdateLog} logs={logs} settings={settings} />;
       case 'calendar':
-        return <CalendarView logs={logs} />;
+        return <CalendarView logs={logs} settings={settings} />;
       case 'report':
         return <ReportView logs={logs} />;
       case 'settings':
@@ -125,10 +124,11 @@ const App: React.FC = () => {
             onSettingsChange={setSettings} 
             onRequestNotificationPermission={requestNotificationPermission}
             notificationPermission={notificationPermission}
+            logs={logs}
           />
         );
       default:
-        return <DailyLogForm addOrUpdateLog={addOrUpdateLog} logs={logs} targetWakeupTime={settings.targetWakeupTime} />;
+        return <DailyLogForm addOrUpdateLog={addOrUpdateLog} logs={logs} settings={settings} />;
     }
   };
 
@@ -182,13 +182,14 @@ interface NavButtonProps {
     isActive: boolean;
 }
 
-const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isActive }) => {
+const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isActive, ...props }) => {
     const activeClasses = 'text-sky-600 dark:text-sky-400';
     const inactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300';
     return (
         <button
             onClick={onClick}
             className={`flex flex-col items-center justify-center p-2 w-full transition-colors duration-200 ${isActive ? activeClasses : inactiveClasses}`}
+            {...props}
         >
             <div className="w-6 h-6 mb-1">{icon}</div>
             <span className="text-xs font-medium">{label}</span>

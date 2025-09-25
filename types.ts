@@ -8,6 +8,11 @@ export interface NightWaking {
   backToSleepTime: string;
 }
 
+export interface Seizure {
+  startTime: string;
+  endTime: string;
+}
+
 export interface LogEntry {
   id: string; // 'YYYY-MM-DD'
   date: string; // 'YYYY-MM-DD'
@@ -18,7 +23,16 @@ export interface LogEntry {
   wokeUpAtNight: boolean;
   nightWakings: NightWaking[];
   notes?: string;
-  isRedDay: boolean;
+  trigger?: string;
+  isEarlyWakeup: boolean; // Renamed from isRedDay
+  hadSeizure: boolean;
+  seizures: Seizure[];
+}
+
+export interface MedicationTemplate {
+    id: string;
+    name: string;
+    dosage: string;
 }
 
 export interface AppSettings {
@@ -26,4 +40,22 @@ export interface AppSettings {
     morningReminder: string; // 'HH:mm'
     eveningReminder: string; // 'HH:mm'
     notificationsEnabled: boolean;
+    medications: MedicationTemplate[];
+    noteTags: string[];
+    triggerTags: string[];
+    redDayFactors: {
+        seizure: boolean;
+        nightWakings: boolean;
+        earlyWakeup: boolean;
+    };
+    orangeDayFactors: {
+        seizure: boolean;
+        nightWakings: boolean;
+        earlyWakeup: boolean;
+    };
+    yellowDayFactors: {
+        seizure: boolean;
+        nightWakings: boolean;
+        earlyWakeup: boolean;
+    };
 }
