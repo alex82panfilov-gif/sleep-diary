@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { LogEntry, NightWaking, Seizure, AppSettings } from '../types';
 import { ClipboardIcon } from './Icons';
+import { TextAreaModal } from './TextAreaModal';
 
 interface DailyLogFormProps {
     addOrUpdateLog: (log: LogEntry) => void;
@@ -49,6 +50,17 @@ export const DailyLogForm: React.FC<DailyLogFormProps> = ({ addOrUpdateLog, logs
 
     const sleepDuration = useMemo(() => calculateSleepDuration(bedtime, wakeupTime), [bedtime, wakeupTime]);
     
+    // State for mobile-specific modal editing
+    const [isMobile, setIsMobile] = useState(false);
+    const [editingField, setEditingField] = useState<{ field: 'notes' | 'trigger'; title: string; value: string } | null>(null);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const populateForm = (log: LogEntry | null) => {
         if (log) {
             setBedtime(log.bedtime);
@@ -115,14 +127,41 @@ export const DailyLogForm: React.FC<DailyLogFormProps> = ({ addOrUpdateLog, logs
         }
     };
     
+    const handleTextAreaClick = (field: 'notes' | 'trigger', title: string, value: string) => {
+        if (isMobile) {
+            setEditingField({ field, title, value });
+        }
+    };
+
+    const handleSaveFromModal = (newValue: string) => {
+        if (editingField) {
+            if (editingField.field === 'notes') {
+                setNotes(newValue);
+            } else if (editingField.field === 'trigger') {
+                setTrigger(newValue);
+            }
+            setEditingField(null);
+        }
+    };
+
     const appendTag = (tag: string, field: 'notes' | 'trigger') => {
         const tagText = `#${tag} `;
         if (field === 'notes') {
-            if (!notes.includes(tagText)) setNotes(prev => prev + tagText);
-            notesRef.current?.focus();
+            const newNotes = notes.includes(tagText) ? notes : notes + tagText;
+            if (newNotes !== notes) setNotes(newNotes);
+            if (isMobile) {
+                handleTextAreaClick('notes', 'Редактировать заметки', newNotes);
+            } else {
+                notesRef.current?.focus();
+            }
         } else {
-            if (!trigger.includes(tagText)) setTrigger(prev => prev + tagText);
-            triggerRef.current?.focus();
+            const newTrigger = trigger.includes(tagText) ? trigger : trigger + tagText;
+            if (newTrigger !== trigger) setTrigger(newTrigger);
+            if (isMobile) {
+                handleTextAreaClick('trigger', 'Редактировать триггер', newTrigger);
+            } else {
+                triggerRef.current?.focus();
+            }
         }
     };
 
@@ -377,13 +416,32 @@ export const DailyLogForm: React.FC<DailyLogFormProps> = ({ addOrUpdateLog, logs
                 
                 <div className="flex flex-col">
                     <label htmlFor="notes" className="mb-1 font-semibold text-slate-600 dark:text-slate-300">Заметки</label>
-                    <textarea ref={notesRef} id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="p-2 border rounded-md bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Особенности сна, пробуждения, настроения..."></textarea>
+                    <div className={isMobile ? 'cursor-pointer' : ''} onClick={() => handleTextAreaClick('notes', 'Редактировать заметки', notes)}>
+                        <textarea 
+                            ref={notesRef} 
+                            id="notes" 
+                            value={notes} 
+                            onChange={e => setNotes(e.target.value)} 
+                            readOnly={isMobile}
+                            rows={3} 
+                            className="w-full p-2 border rounded-md bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Особенности сна, пробуждения, настроения..."/>
+                    </div>
                     {settings.noteTags.length > 0 && renderTagButtons(settings.noteTags, 'notes')}
                 </div>
 
                 <div className="flex flex-col">
                     <label htmlFor="trigger" className="mb-1 font-semibold text-slate-600 dark:text-slate-300">Триггер</label>
-                    <textarea ref={triggerRef} id="trigger" value={trigger} onChange={e => setTrigger(e.target.value)} rows={2} className="p-2 border rounded-md bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Возможные триггеры приступов или плохого сна..."></textarea>
+                     <div className={isMobile ? 'cursor-pointer' : ''} onClick={() => handleTextAreaClick('trigger', 'Редактировать триггер', trigger)}>
+                        <textarea 
+                            ref={triggerRef} 
+                            id="trigger" 
+                            value={trigger} 
+                            onChange={e => setTrigger(e.target.value)}
+                            readOnly={isMobile}
+                            rows={2} 
+                            className="w-full p-2 border rounded-md bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-sky-500 focus:border-sky-500" 
+                            placeholder="Возможные триггеры приступов или плохого сна..."/>
+                    </div>
                     {settings.triggerTags.length > 0 && renderTagButtons(settings.triggerTags, 'trigger')}
                 </div>
 
@@ -394,6 +452,15 @@ export const DailyLogForm: React.FC<DailyLogFormProps> = ({ addOrUpdateLog, logs
                     {message && <p className="text-green-600 dark:text-green-400 animate-pulse">{message}</p>}
                 </div>
             </form>
+            {editingField && (
+                <TextAreaModal
+                    isOpen={!!editingField}
+                    title={editingField.title}
+                    initialValue={editingField.value}
+                    onSave={handleSaveFromModal}
+                    onClose={() => setEditingField(null)}
+                />
+            )}
         </div>
     );
 };
